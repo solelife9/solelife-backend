@@ -48,6 +48,15 @@ db.exec(`
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname)));
+app.get('/', (req, res) => {
+  const fs = require('fs');
+  const pub = path.join(__dirname, 'public', 'index.html');
+  const root = path.join(__dirname, 'index.html');
+  if (fs.existsSync(pub)) res.sendFile(pub);
+  else if (fs.existsSync(root)) res.sendFile(root);
+  else res.send('SoleLife 서버 실행 중!');
+});app.use(express.static(path.join(__dirname, 'public')));
 
 // ── 유저 등록/조회 (device_id 기반 자동 로그인) ──
 app.post('/api/auth', (req, res) => {
