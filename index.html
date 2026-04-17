@@ -253,9 +253,7 @@ select option{background:#252525}
 // ── 설정 ──
 // 서버 배포 후 아래 URL을 실제 서버 주소로 변경하세요
 // 예: const API = 'https://solelife.railway.app'
-const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? `http://localhost:3001`
-  : window.location.origin;
+const API = 'https://solelife-backend-production.up.railway.app';
 
 // ── 기기 ID (앱 재시작해도 유지) ──
 let DEVICE_ID = localStorage.getItem('sl_device_id');
