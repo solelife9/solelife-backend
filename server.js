@@ -268,7 +268,11 @@ app.get('/api/shoes/search', (req, res) => {
     if (full.includes(q) || model.includes(q)) return true;
     const kwMatch = s.keywords.some(k => k.includes(q) || q.includes(k));
     return kwMatch;
-  }).slice(0, 10);
+  }).sort((a,b) => {
+  const ab = a.brand.toLowerCase() === q ? 0 : 1;
+  const bb = b.brand.toLowerCase() === q ? 0 : 1;
+  return ab - bb;
+}).slice(0, 10);
   res.json(results);
 });
 
