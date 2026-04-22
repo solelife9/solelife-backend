@@ -272,7 +272,7 @@ app.get('/api/shoes/search', (req, res) => {
   const ab = a.brand.toLowerCase() === q ? 0 : 1;
   const bb = b.brand.toLowerCase() === q ? 0 : 1;
   return ab - bb;
-}).slice(0, 10);
+}).slice(0, 20)
   res.json(results);
 });
 
