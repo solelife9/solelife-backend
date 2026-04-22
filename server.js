@@ -273,7 +273,7 @@ app.get('/api/shoes/search', (req, res) => {
   const bb = b.brand.toLowerCase() === q ? 0 : 1;
  
 return ab - bb || a.model.localeCompare(b.model);
-}).slice(0, 20);
+}).slice(0, 50);
   res.json(results);
 });
 
