@@ -271,7 +271,7 @@ app.get('/api/shoes/search', (req, res) => {
   }).sort((a,b) => {
   const ab = a.brand.toLowerCase() === q ? 0 : 1;
   const bb = b.brand.toLowerCase() === q ? 0 : 1;
-  return ab - bb;
+ 
 return ab - bb || a.model.localeCompare(b.model);
 }).slice(0, 20);
   res.json(results);
