@@ -228,7 +228,10 @@ const SHOE_DB = [
   { brand: "New Balance", model: "FuelCell SC Trainer v2", max_km: 600, type: "일반형", keywords: ["sc trainer v2", "퓨얼셀 트레이너"] },
   { brand: "New Balance", model: "More v4", max_km: 700, type: "맥스쿠션", keywords: ["more v4", "모어 v4"] },
   { brand: "New Balance", model: "Hierro v8", max_km: 700, type: "트레일", keywords: ["hierro v8", "히에로 v8"] },
-  { brand: "On", model: "Cloudmonster 2", max_km: 700, type: "맥스쿠션", keywords: ["cloudmonster 2", "클라우드몬스터 2"] },
+  { brand: "Nike", model: "Vomero 17", max_km: 700, type: "맥스쿠션", keywords: ["vomero 17", "보메로 17", "줌보메로 17"] },
+  { brand: "Nike", model: "Vomero 16", max_km: 700, type: "맥스쿠션", keywords: ["vomero 16", "보메로 16"] },
+  { brand: "Nike", model: "Zoom Vomero 5", max_km: 600, type: "레트로/일반형", keywords: ["zoom vomero 5", "줌보메로 5", "vomero 5"] },
+  { brand: "On", model: "Cloudmonster 2", max_km: 700, type: "맥스쿠션", keywords: ["cloudmonster 2", "클라우드몬스터 2", "on cloudmonster"] },
   { brand: "On", model: "Cloudmonster", max_km: 700, type: "맥스쿠션", keywords: ["cloudmonster", "클라우드몬스터"] },
   { brand: "On", model: "Cloudsurfer 7", max_km: 650, type: "일반형", keywords: ["cloudsurfer 7", "클라우드서퍼 7"] },
   { brand: "On", model: "Cloud X 3", max_km: 600, type: "일반형", keywords: ["cloud x 3", "클라우드x3"] },
@@ -257,11 +260,15 @@ app.get('/api/shoes/search', (req, res) => {
   const q = (req.query.q || '').toLowerCase().trim();
   if (!q) return res.json([]);
   const results = SHOE_DB.filter(s => {
-    const brandMatch = s.brand.toLowerCase().includes(q);
-    const modelMatch = s.model.toLowerCase().includes(q);
-    const kwMatch = s.keywords.some(k => k.includes(q) || q.includes(k.substring(0, Math.min(k.length, q.length))));
-    return brandMatch || modelMatch || kwMatch;
-  }).slice(0, 8);
+    const brand = s.brand.toLowerCase();
+    const model = s.model.toLowerCase();
+    const full = brand + ' ' + model;
+    // 브랜드 완전/시작 일치 (On, Nike 등 짧은 단어 대응)
+    if (brand === q || brand.startsWith(q)) return true;
+    if (full.includes(q) || model.includes(q)) return true;
+    const kwMatch = s.keywords.some(k => k.includes(q) || q.includes(k));
+    return kwMatch;
+  }).slice(0, 10);
   res.json(results);
 });
 
