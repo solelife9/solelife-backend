@@ -228,6 +228,7 @@ const SHOE_DB = [
   { brand: "New Balance", model: "FuelCell SC Trainer v2", max_km: 600, type: "일반형", keywords: ["sc trainer v2", "퓨얼셀 트레이너"] },
   { brand: "New Balance", model: "More v4", max_km: 700, type: "맥스쿠션", keywords: ["more v4", "모어 v4"] },
   { brand: "New Balance", model: "Hierro v8", max_km: 700, type: "트레일", keywords: ["hierro v8", "히에로 v8"] },
+  { brand: "Nike", model: "Vomero 18", max_km: 700, type: "맥스쿠션", keywords: ["vomero 18", "보메로 18", "nike vomero 18"] },
   { brand: "Nike", model: "Vomero 17", max_km: 700, type: "맥스쿠션", keywords: ["vomero 17", "보메로 17", "nike vomero", "nike v", "vomero"] },
   { brand: "Nike", model: "Vomero 16", max_km: 700, type: "맥스쿠션", keywords: ["vomero 16", "보메로 16", "vomero"] },
   { brand: "Nike", model: "Zoom Vomero 5", max_km: 600, type: "레트로/일반형", keywords: ["zoom vomero 5", "줌보메로 5", "vomero 5", "vomero"] },
