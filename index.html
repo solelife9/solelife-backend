@@ -284,7 +284,7 @@ const LOCAL_DB=[
   {brand:'New Balance',model:'Fresh Foam X 880 v14',max_km:700,type:'일반형'},{brand:'New Balance',model:'Fresh Foam X 860 v14',max_km:700,type:'안정화'},
   {brand:'New Balance',model:'FuelCell SC Elite v4',max_km:400,type:'카본 레이싱'},{brand:'New Balance',model:'FuelCell Rebel v4',max_km:600,type:'경량형'},
   {brand:'New Balance',model:'More v4',max_km:700,type:'맥스쿠션'},
-  {brand:'On',model:'Cloudmonster 2',max_km:700,type:'맥스쿠션'},{brand:'On',model:'Cloudmonster',max_km:700,type:'맥스쿠션'},
+  {brand:'Nike',model:'Vomero 17',max_km:700,type:'맥스쿠션'},{brand:'Nike',model:'Vomero 16',max_km:700,type:'맥스쿠션'},{brand:'Nike',model:'Zoom Vomero 5',max_km:600,type:'레트로/일반형'},{brand:'On',model:'Cloudmonster 2',max_km:700,type:'맥스쿠션'},{brand:'On',model:'Cloudmonster',max_km:700,type:'맥스쿠션'},
   {brand:'On',model:'Cloudsurfer 7',max_km:650,type:'일반형'},{brand:'On',model:'Cloud X 3',max_km:600,type:'일반형'},
   {brand:'On',model:'Cloudflow 4',max_km:600,type:'경량형'},{brand:'On',model:'Cloudvista',max_km:650,type:'트레일'},
   {brand:'On',model:'Cloudboom Echo 3',max_km:400,type:'카본 레이싱'},
@@ -303,8 +303,22 @@ async function onSearchInput(val){
   if(val.length<1){list.className='ac-list';return;}
   searchTimer=setTimeout(async()=>{
     try{const r=await fetch(API+'/api/shoes/search?q='+encodeURIComponent(val));renderAC(await r.json());}
-    catch(e){renderAC(LOCAL_DB.filter(s=>(s.brand+' '+s.model).toLowerCase().includes(val.toLowerCase())).slice(0,8));}
+    catch(e){renderAC(localSearch(val));}
   },150);
+}
+
+function localSearch(val){
+  const q=val.toLowerCase().trim();
+  return LOCAL_DB.filter(s=>{
+    const brand=s.brand.toLowerCase();
+    const model=s.model.toLowerCase();
+    const full=(brand+' '+model);
+    // 브랜드 완전 일치 or 시작 일치
+    if(brand===q||brand.startsWith(q)) return true;
+    if(full.includes(q)) return true;
+    if(model.includes(q)) return true;
+    return false;
+  }).slice(0,10);
 }
 
 function renderAC(results){
