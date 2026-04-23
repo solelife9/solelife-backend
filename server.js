@@ -39,6 +39,8 @@ db.exec(`
     run_date TEXT NOT NULL,
     memo TEXT DEFAULT '',
     source TEXT DEFAULT 'manual',
+    duration INTEGER DEFAULT 0,
+    cadence INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (shoe_id) REFERENCES shoes(id)
@@ -111,13 +113,13 @@ app.get('/api/runs', (req, res) => {
 
 // ── 런 기록 추가 ──
 app.post('/api/runs', (req, res) => {
-  const { user_id, shoe_id, km, run_date, memo, source } = req.body;
+  const { user_id, shoe_id, km, run_date, memo, source, duration, cadence } = req.body;
   if (!user_id || !shoe_id || !km || !run_date) return res.status(400).json({ error: '필수값 누락' });
   const id = uuidv4();
   db.prepare(
-    'INSERT INTO runs (id, user_id, shoe_id, km, run_date, memo, source) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(id, user_id, shoe_id, km, run_date, memo || '', source || 'manual');
-  res.json({ id, shoe_id, km, run_date, memo, source });
+    'INSERT INTO runs (id, user_id, shoe_id, km, run_date, memo, source, duration, cadence) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(id, user_id, shoe_id, km, run_date, memo || '', source || 'manual', duration || 0, cadence || 0);
+  res.json({ id, shoe_id, km, run_date, memo, source, duration: duration || 0, cadence: cadence || 0 });
 });
 
 // ── 런 기록 삭제 ──
