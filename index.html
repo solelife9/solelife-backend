@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d0d0d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SoleMate">
+<link rel="manifest" href="manifest.json">
+<title>SoleMate</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0d0d0d;--surface:#181818;--card:#1e1e1e;--border:#2a2a2a;--accent:#C8F25A;--warn:#ffb432;--danger:#ff6060;--t1:#f0f0f0;--t2:#b0b0b0;--t3:#777;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--t1);font-family:'DM Sans',sans-serif}
+#root{display:flex;flex-direction:column;height:100%}
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:calc(var(--safe-top) + 14px) 18px 14px;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--accent)}
+.logo em{color:var(--t1);font-style:normal}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--t3);flex-shrink:0}
+.sync-dot.ok{background:var(--accent)}.sync-dot.err{background:var(--danger)}
+.add-btn{height:40px;padding:0 20px;border-radius:100px;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;color:#0d0d0d;font-weight:500;font-size:14px;font-family:'DM Sans',sans-serif;flex-shrink:0;letter-spacing:.3px}
+.add-btn svg{width:16px;height:16px;stroke:#0d0d0d;stroke-width:2.5;flex-shrink:0}
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.page{display:none;padding:14px 16px 20px}.page.active{display:block}
+.nav{display:flex;background:var(--surface);border-top:1px solid var(--border);padding-bottom:max(var(--safe-bottom),20px);flex-shrink:0}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0;border:none;background:transparent;cursor:pointer;color:var(--t3);font-size:10px;font-family:'DM Sans',sans-serif;font-weight:500}
+.nb.active{color:var(--accent)}
+.nb svg{width:22px;height:22px;stroke-width:1.8}
+.shoe-card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid var(--border)}
+.shoe-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.shoe-name{font-size:15px;font-weight:500;color:var(--t1);margin-bottom:3px}
+.shoe-sub{font-size:12px;color:var(--t3)}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500;white-space:nowrap}
+.bg{background:rgba(200,242,90,.15);color:var(--accent);border:1px solid rgba(200,242,90,.25)}
+.bw{background:rgba(255,180,50,.15);color:var(--warn);border:1px solid rgba(255,180,50,.25)}
+.bd{background:rgba(255,96,96,.15);color:var(--danger);border:1px solid rgba(255,96,96,.25)}
+.bar-wrap{background:#252525;border-radius:100px;height:8px;overflow:hidden;margin-bottom:10px}
+.bar{height:100%;border-radius:100px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.bar-g{background:var(--accent)}.bar-w{background:var(--warn)}.bar-d{background:var(--danger)}
+.shoe-stats{display:flex;justify-content:space-between}
+.ss-l{font-size:11px;color:var(--t3);margin-bottom:2px}.ss-v{font-size:14px;font-weight:500;color:var(--t1)}
+.del-btn{background:transparent;border:none;color:#444;font-size:20px;cursor:pointer;padding:0 6px;line-height:1}
+.sec-title{font-size:11px;color:var(--t3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px;font-weight:500}
+.form-card{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border)}
+.fc-title{font-size:13px;font-weight:500;color:var(--accent);margin-bottom:14px}
+.frow{margin-bottom:12px;position:relative}
+.flabel{font-size:12px;color:var(--t2);display:block;margin-bottom:6px;font-weight:500}
+input,select{width:100%;background:#252525;border:1px solid #3a3a3a;border-radius:10px;padding:11px 13px;color:var(--t1);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus{border-color:var(--accent)}
+input::placeholder{color:#555}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23777' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:36px}
+select option{background:#252525}
+.sbtn{width:100%;padding:13px;background:var(--accent);color:#0d0d0d;border:none;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.autocomplete-wrap{position:relative}
+.ac-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#1e1e1e;border:1px solid #3a3a3a;border-radius:12px;z-index:200;overflow:hidden;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.ac-list.show{display:block}
+.ac-item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--border)}
+.ac-item:last-child{border-bottom:none}.ac-item:active{background:#252525}
+.ac-name{font-size:14px;color:var(--t1);font-weight:500}.ac-sub{font-size:12px;color:var(--t3);margin-top:2px}
+.ac-badge{font-size:10px;padding:2px 7px;border-radius:8px;background:rgba(200,242,90,.12);color:var(--accent);border:1px solid rgba(200,242,90,.2)}
+.ac-km{font-size:12px;color:var(--t3);margin-top:2px;text-align:right}
+.dur-hint{background:#1a2000;border:1px solid rgba(200,242,90,.2);border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px;color:var(--accent);display:none;line-height:1.7}
+.dur-hint.show{display:block}.dur-hint strong{color:#e0ff80;font-size:13px}
+.hist-wrap{background:var(--card);border-radius:14px;padding:0 14px;border:1px solid var(--border)}
+.hi{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.hi:last-child{border-bottom:none}
+.hi-dist{font-size:22px;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;color:var(--accent)}
+.hi-meta{font-size:12px;color:var(--t3);margin-top:2px}.hi-shoe{font-size:12px;color:var(--t3);text-align:right;max-width:130px}
+.gps-tag{font-size:10px;padding:2px 6px;background:rgba(200,242,90,.12);color:var(--accent);border-radius:8px;border:1px solid rgba(200,242,90,.2)}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.stat-box{background:var(--card);border-radius:12px;padding:14px 10px;text-align:center;border:1px solid var(--border)}
+.sn{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--accent);display:block}
+.sl{font-size:11px;color:var(--t3);margin-top:2px;display:block}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:flex-end;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#1a1a1a;border-radius:20px 20px 0 0;padding:20px 16px;width:100%;max-width:480px;border-top:1px solid var(--border);padding-bottom:calc(var(--safe-bottom) + 20px);max-height:90vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:500;color:var(--t1);margin-bottom:16px}
+.modal-btns{display:flex;gap:8px;margin-top:16px}
+.btn-cancel{flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--t2);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px}
+.btn-save{flex:1;padding:12px;border-radius:12px;border:none;background:var(--accent);color:#0d0d0d;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500}
+.empty{text-align:center;color:var(--t3);padding:40px 0;font-size:14px}
+.empty-icon{font-size:40px;display:block;margin-bottom:10px}
+.empty-t{color:var(--t1);font-weight:500;font-size:15px;margin-bottom:4px}
+.loading{text-align:center;padding:30px;color:var(--t3);font-size:14px}
+/* GPS 화면 */
+.run-screen{display:flex;flex-direction:column;align-items:center;padding:10px 0 20px}
+.run-shoe-select{width:100%;margin-bottom:16px}
+.run-big-display{text-align:center;margin:8px 0 20px}
+.run-km{font-family:'Bebas Neue',sans-serif;font-size:96px;line-height:1;color:var(--accent);letter-spacing:2px}
+.run-km-label{font-size:13px;color:var(--t3);margin-top:4px;letter-spacing:1px}
+.run-stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;margin-bottom:24px}
+.run-stat{background:var(--card);border-radius:12px;padding:14px 8px;text-align:center;border:1px solid var(--border)}
+.run-stat-val{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--t1);letter-spacing:1px}
+.run-stat-label{font-size:11px;color:var(--t3);margin-top:3px}
+.run-start-btn{width:100%;padding:18px;border-radius:16px;border:none;font-size:18px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.run-start-btn.idle{background:var(--accent);color:#0d0d0d}
+.run-start-btn.running{background:var(--danger);color:#fff}
+.gps-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t3);margin-bottom:14px;justify-content:center}
+.gps-dot{width:8px;height:8px;border-radius:50%;background:var(--t3);flex-shrink:0}
+.gps-dot.active{background:var(--accent);animation:pulse 1.2s infinite}
+.gps-dot.searching{background:var(--warn);animation:pulse .6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.run-finish-card{background:var(--card);border-radius:14px;padding:16px;width:100%;margin-bottom:16px;border:1px solid rgba(200,242,90,.3);display:none}
+.run-finish-card.show{display:block}
+.run-finish-km{font-family:'Bebas Neue',sans-serif;font-size:52px;color:var(--accent);letter-spacing:2px}
+.run-finish-meta{font-size:12px;color:var(--t3);margin-top:4px}
+.run-save-area{width:100%;margin-top:14px;display:none}
+.run-save-area.show{display:block}
+</style>
+</head>
+<body>
+<div id="root">
+  <div class="hdr">
+    <div class="logo">Sole<em>Mate</em></div>
+    <div class="hdr-right">
+      <div class="sync-dot" id="sync-dot"></div>
+      <button class="add-btn" onclick="openModal()"><svg viewBox="0 0 24 24" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>러닝화 추가</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="page active" id="p-shoes">
+      <div id="shoe-list"><div class="loading">불러오는 중...</div></div>
+    </div>
+    <div class="page" id="p-run">
+      <div class="run-screen">
+        <div class="frow run-shoe-select">
+          <label class="flabel">러닝화 선택</label>
+          <select id="run-shoe"></select>
+        </div>
+        <div class="run-finish-card" id="run-finish-card">
+          <div style="font-size:12px;color:var(--accent);font-weight:500;margin-bottom:6px">완료된 런</div>
+          <div class="run-finish-km" id="run-finish-km">0.00KM</div>
+          <div class="run-finish-meta" id="run-finish-meta"></div>
+        </div>
+        <div class="gps-status">
+          <div class="gps-dot" id="gps-dot"></div>
+          <span id="gps-label">GPS 대기 중</span>
+        </div>
+        <div class="run-big-display">
+          <div class="run-km" id="run-km-display">0.00</div>
+          <div class="run-km-label">KM</div>
+        </div>
+        <div class="run-stats-row">
+          <div class="run-stat"><div class="run-stat-val" id="run-time">00:00</div><div class="run-stat-label">시간</div></div>
+          <div class="run-stat"><div class="run-stat-val" id="run-pace">--</div><div class="run-stat-label">페이스/km</div></div>
+          <div class="run-stat"><div class="run-stat-val" id="run-pts">--</div><div class="run-stat-label">GPS 수신</div></div>
+        </div>
+        <div class="run-save-area" id="run-save-area">
+          <div class="frow"><label class="flabel">메모 (선택)</label><input type="text" id="run-memo" placeholder="예: 한강 러닝"></div>
+          <button class="sbtn" onclick="saveGpsRun()" style="margin-bottom:12px">이 기록 저장</button>
+        </div>
+        <button class="run-start-btn idle" id="run-start-btn" onclick="toggleRun()">러닝 시작</button>
+      </div>
+    </div>
+    <div class="page" id="p-log">
+      <div class="form-card">
+        <div class="fc-title">수동 기록 추가</div>
+        <div class="frow"><label class="flabel">러닝화 선택</label><select id="log-shoe"></select></div>
+        <div class="frow"><label class="flabel">달린 거리 (km)</label><input type="number" id="log-km" placeholder="예: 5.2" min="0.1" step="0.1" inputmode="decimal"></div>
+        <div class="frow"><label class="flabel">날짜</label><input type="date" id="log-date"></div>
+        <div class="frow"><label class="flabel">메모 (선택)</label><input type="text" id="log-memo2" placeholder="예: 한강 러닝"></div>
+        <button class="sbtn" onclick="addRun()">기록 추가</button>
+      </div>
+      <p class="sec-title">최근 기록</p>
+      <div class="hist-wrap" id="run-history"></div>
+    </div>
+    <div class="page" id="p-stats">
+      <div class="stat-grid">
+        <div class="stat-box"><span class="sn" id="st-km">0</span><span class="sl">총 km</span></div>
+        <div class="stat-box"><span class="sn" id="st-runs">0</span><span class="sl">런 횟수</span></div>
+        <div class="stat-box"><span class="sn" id="st-shoes">0</span><span class="sl">보유 신발</span></div>
+      </div>
+      <p class="sec-title">신발별 현황</p>
+      <div id="stats-detail"></div>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nb active" onclick="showTab('shoes',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>내 신발
+    </button>
+    <button class="nb" onclick="showTab('run',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>GPS 런
+    </button>
+    <button class="nb" onclick="showTab('log',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>기록
+    </button>
+    <button class="nb" onclick="showTab('stats',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="18" y="3" width="4" height="18" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="2" y="13" width="4" height="8" rx="1"/></svg>통계
+    </button>
+  </nav>
+</div>
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <div class="modal-title">러닝화 등록</div>
+    <div class="frow">
+      <label class="flabel">브랜드 / 모델명 검색</label>
+      <div class="autocomplete-wrap">
+        <input id="m-name" placeholder="예: asics, nike peg, 슈퍼블라스트..." autocomplete="off" oninput="onSearchInput(this.value)">
+        <div class="ac-list" id="ac-list"></div>
+      </div>
+      <div class="dur-hint" id="dur-hint"></div>
+    </div>
+    <div class="frow"><label class="flabel">권장 내구도 (km)</label>
+      <select id="m-max"><option value="500">500km — 소프트/쿠션형</option><option value="600" selected>600km — 일반형</option><option value="700">700km — 내구형</option><option value="800">800km — 고내구형</option></select>
+    </div>
+    <div class="frow"><label class="flabel">이미 달린 거리 (km)</label><input type="number" id="m-used" value="0" min="0" inputmode="decimal"></div>
+    <div class="frow"><label class="flabel">구매일</label><input type="date" id="m-date"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-save" onclick="saveShoe()">등록</button>
+    </div>
+  </div>
+</div>
+<script>
+const API='https://solelife-backend-production.up.railway.app';
+let DEVICE_ID=localStorage.getItem('sl_device_id');
+if(!DEVICE_ID){DEVICE_ID='sl_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);localStorage.setItem('sl_device_id',DEVICE_ID);}
+let USER_ID=null,shoes=[],runs=[],searchTimer=null,selectedShoeData=null;
+let isRunning=false,watchId=null,gpsPoints=[],runStartTime=null,runTimerInterval=null,totalDistKm=0,finishedKm=0,finishedDuration=0;
+
+function setSyncDot(t){document.getElementById('sync-dot').className='sync-dot'+(t?' '+t:'');}
+
+async function init(){
+  try{
+    const r=await fetch(API+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device_id:DEVICE_ID})});
+    const d=await r.json();USER_ID=d.user_id;setSyncDot('ok');await loadAll();
+  }catch(e){setSyncDot('err');loadFromLocal();}
+}
+
+async function loadAll(){
+  try{
+    const[sr,rr]=await Promise.all([fetch(API+'/api/shoes?user_id='+USER_ID),fetch(API+'/api/runs?user_id='+USER_ID)]);
+    shoes=await sr.json();runs=await rr.json();
+    localStorage.setItem('sl_shoes_cache',JSON.stringify(shoes));localStorage.setItem('sl_runs_cache',JSON.stringify(runs));
+    renderShoes();
+  }catch(e){loadFromLocal();}
+}
+
+function loadFromLocal(){
+  try{shoes=JSON.parse(localStorage.getItem('sl_shoes_cache')||'[]');}catch(e){shoes=[];}
+  try{runs=JSON.parse(localStorage.getItem('sl_runs_cache')||'[]');}catch(e){runs=[];}
+  renderShoes();
+}
+
+const LOCAL_DB=[
+  {brand:'Nike',model:'Pegasus 41',max_km:640,type:'일반형'},{brand:'Nike',model:'Pegasus 40',max_km:640,type:'일반형'},
+  {brand:'Nike',model:'Pegasus 39',max_km:640,type:'일반형'},{brand:'Nike',model:'Vaporfly 3',max_km:300,type:'카본 레이싱'},
+  {brand:'Nike',model:'Vaporfly 2',max_km:300,type:'카본 레이싱'},{brand:'Nike',model:'Alphafly 3',max_km:300,type:'카본 레이싱'},
+  {brand:'Nike',model:'Alphafly 2',max_km:300,type:'카본 레이싱'},{brand:'Nike',model:'Invincible 3',max_km:640,type:'맥스쿠션'},
+  {brand:'Nike',model:'Infinity Run 4',max_km:650,type:'안정화'},{brand:'Nike',model:'Zoom Fly 5',max_km:500,type:'내구형'},
+  {brand:'Nike',model:'Structure 25',max_km:700,type:'안정화'},{brand:'Nike',model:'Ultrafly',max_km:800,type:'트레일'},
+  {brand:'Nike',model:'Streakfly',max_km:350,type:'카본 레이싱'},{brand:'Nike',model:'Winflo 10',max_km:600,type:'일반형'},
+  {brand:'ASICS',model:'Superblast 2',max_km:700,type:'맥스쿠션'},{brand:'ASICS',model:'Superblast',max_km:700,type:'맥스쿠션'},
+  {brand:'ASICS',model:'Gel-Kayano 31',max_km:700,type:'안정화'},{brand:'ASICS',model:'Gel-Kayano 30',max_km:700,type:'안정화'},
+  {brand:'ASICS',model:'Gel-Nimbus 26',max_km:800,type:'맥스쿠션'},{brand:'ASICS',model:'Gel-Nimbus 25',max_km:800,type:'맥스쿠션'},
+  {brand:'ASICS',model:'Gel-Cumulus 26',max_km:700,type:'일반형'},{brand:'ASICS',model:'Gel-Cumulus 25',max_km:700,type:'일반형'},
+  {brand:'ASICS',model:'Metaspeed Sky+',max_km:400,type:'카본 레이싱'},{brand:'ASICS',model:'Metaspeed Edge+',max_km:400,type:'카본 레이싱'},
+  {brand:'ASICS',model:'Novablast 4',max_km:600,type:'일반형'},{brand:'ASICS',model:'Novablast 3',max_km:600,type:'일반형'},
+  {brand:'ASICS',model:'GT-2000 12',max_km:700,type:'안정화'},{brand:'ASICS',model:'GT-1000 12',max_km:650,type:'안정화'},
+  {brand:'ASICS',model:'Gel-Pulse 15',max_km:600,type:'일반형'},{brand:'ASICS',model:'Gel-Sonoma 7',max_km:600,type:'트레일'},
+  {brand:'Brooks',model:'Ghost 16',max_km:700,type:'일반형'},{brand:'Brooks',model:'Ghost 15',max_km:700,type:'일반형'},
+  {brand:'Brooks',model:'Ghost 14',max_km:700,type:'일반형'},{brand:'Brooks',model:'Glycerin 21',max_km:700,type:'맥스쿠션'},
+  {brand:'Brooks',model:'Glycerin 20',max_km:700,type:'맥스쿠션'},{brand:'Brooks',model:'Adrenaline GTS 24',max_km:700,type:'안정화'},
+  {brand:'Brooks',model:'Adrenaline GTS 23',max_km:700,type:'안정화'},{brand:'Brooks',model:'Hyperion Elite 4',max_km:400,type:'카본 레이싱'},
+  {brand:'Brooks',model:'Hyperion Max 2',max_km:600,type:'맥스쿠션'},{brand:'Brooks',model:'Cascadia 17',max_km:700,type:'트레일'},
+  {brand:'Adidas',model:'Adizero Boston 12',max_km:800,type:'내구형'},{brand:'Adidas',model:'Adizero Boston 11',max_km:800,type:'내구형'},
+  {brand:'Adidas',model:'Adizero Adios Pro 3',max_km:400,type:'카본 레이싱'},{brand:'Adidas',model:'Adizero Adios Pro Evo 1',max_km:300,type:'카본 레이싱'},
+  {brand:'Adidas',model:'Ultraboost 23',max_km:800,type:'맥스쿠션'},{brand:'Adidas',model:'Ultraboost Light',max_km:700,type:'맥스쿠션'},
+  {brand:'Adidas',model:'Solarboost 5',max_km:700,type:'일반형'},{brand:'Adidas',model:'Supernova Rise',max_km:600,type:'일반형'},
+  {brand:'Saucony',model:'Endorphin Pro 4',max_km:400,type:'카본 레이싱'},{brand:'Saucony',model:'Endorphin Pro 3',max_km:400,type:'카본 레이싱'},
+  {brand:'Saucony',model:'Endorphin Speed 4',max_km:700,type:'일반형'},{brand:'Saucony',model:'Endorphin Speed 3',max_km:700,type:'일반형'},
+  {brand:'Saucony',model:'Kinvara 15',max_km:600,type:'경량형'},{brand:'Saucony',model:'Triumph 22',max_km:800,type:'맥스쿠션'},
+  {brand:'Saucony',model:'Ride 17',max_km:700,type:'일반형'},{brand:'Saucony',model:'Guide 17',max_km:700,type:'안정화'},
+  {brand:'Hoka',model:'Clifton 9',max_km:800,type:'맥스쿠션'},{brand:'Hoka',model:'Clifton 8',max_km:800,type:'맥스쿠션'},
+  {brand:'Hoka',model:'Bondi 8',max_km:800,type:'맥스쿠션'},{brand:'Hoka',model:'Bondi X',max_km:700,type:'맥스쿠션'},
+  {brand:'Hoka',model:'Mach 6',max_km:700,type:'일반형'},{brand:'Hoka',model:'Mach 5',max_km:700,type:'일반형'},
+  {brand:'Hoka',model:'Carbon X 3',max_km:500,type:'카본 레이싱'},{brand:'Hoka',model:'Cielo X1',max_km:400,type:'카본 레이싱'},
+  {brand:'Hoka',model:'Speedgoat 6',max_km:600,type:'트레일'},{brand:'Hoka',model:'Speedgoat 5',max_km:600,type:'트레일'},
+  {brand:'Hoka',model:'Kawana 2',max_km:700,type:'일반형'},{brand:'Hoka',model:'Arahi 7',max_km:700,type:'안정화'},
+  {brand:'New Balance',model:'Fresh Foam X 1080 v14',max_km:700,type:'맥스쿠션'},{brand:'New Balance',model:'Fresh Foam X 1080 v13',max_km:700,type:'맥스쿠션'},
+  {brand:'New Balance',model:'Fresh Foam X 880 v14',max_km:700,type:'일반형'},{brand:'New Balance',model:'Fresh Foam X 860 v14',max_km:700,type:'안정화'},
+  {brand:'New Balance',model:'FuelCell SC Elite v4',max_km:400,type:'카본 레이싱'},{brand:'New Balance',model:'FuelCell Rebel v4',max_km:600,type:'경량형'},
+  {brand:'New Balance',model:'More v4',max_km:700,type:'맥스쿠션'},
+  {brand:'Nike',model:'Vomero 17',max_km:700,type:'맥스쿠션'},{brand:'Nike',model:'Vomero 16',max_km:700,type:'맥스쿠션'},{brand:'Nike',model:'Zoom Vomero 5',max_km:600,type:'레트로/일반형'},{brand:'On',model:'Cloudmonster 2',max_km:700,type:'맥스쿠션'},{brand:'On',model:'Cloudmonster',max_km:700,type:'맥스쿠션'},
+  {brand:'On',model:'Cloudsurfer 7',max_km:650,type:'일반형'},{brand:'On',model:'Cloud X 3',max_km:600,type:'일반형'},
+  {brand:'On',model:'Cloudflow 4',max_km:600,type:'경량형'},{brand:'On',model:'Cloudvista',max_km:650,type:'트레일'},
+  {brand:'On',model:'Cloudboom Echo 3',max_km:400,type:'카본 레이싱'},
+  {brand:'Mizuno',model:'Wave Rider 27',max_km:700,type:'일반형'},{brand:'Mizuno',model:'Wave Rider 26',max_km:700,type:'일반형'},
+  {brand:'Mizuno',model:'Wave Inspire 20',max_km:700,type:'안정화'},{brand:'Mizuno',model:'Wave Sky 7',max_km:750,type:'맥스쿠션'},
+  {brand:'Mizuno',model:'Wave Creation 21',max_km:800,type:'맥스쿠션'},{brand:'Mizuno',model:'Wave Rebellion Pro 2',max_km:400,type:'카본 레이싱'},
+  {brand:'Puma',model:'Deviate Nitro Elite 3',max_km:400,type:'카본 레이싱'},{brand:'Puma',model:'Velocity Nitro 3',max_km:650,type:'일반형'},
+  {brand:'Puma',model:'Magnify Nitro 2',max_km:700,type:'맥스쿠션'},
+  {brand:'Salomon',model:'Speedcross 6',max_km:600,type:'트레일'},{brand:'Salomon',model:'Sense Ride 5',max_km:650,type:'트레일'},
+  {brand:'Altra',model:'Torin 7',max_km:700,type:'맥스쿠션'},{brand:'Altra',model:'Lone Peak 8',max_km:700,type:'트레일'},
+];
+
+async function onSearchInput(val){
+  clearTimeout(searchTimer);
+  const list=document.getElementById('ac-list');
+  if(val.length<1){list.className='ac-list';return;}
+  searchTimer=setTimeout(async()=>{
+    try{const r=await fetch(API+'/api/shoes/search?q='+encodeURIComponent(val));renderAC(await r.json());}
+    catch(e){renderAC(localSearch(val));}
+  },150);
+}
+
+function localSearch(val){
+  const q=val.toLowerCase().trim();
+  return LOCAL_DB.filter(s=>{
+    const brand=s.brand.toLowerCase();
+    const model=s.model.toLowerCase();
+    const full=(brand+' '+model);
+    // 브랜드 완전 일치 or 시작 일치
+    if(brand===q||brand.startsWith(q)) return true;
+    if(full.includes(q)) return true;
+    if(model.includes(q)) return true;
+    return false;
+  }).slice(0,10);
+}
+
+function renderAC(results){
+  const list=document.getElementById('ac-list');
+  if(!results.length){list.className='ac-list';return;}
+  list.innerHTML=results.map(s=>`<div class="ac-item" onclick="selectShoe(${JSON.stringify(s).replace(/"/g,'&quot;')})"><div><div class="ac-name">${s.brand} ${s.model}</div><div class="ac-sub">${s.type} · 권장 ${s.max_km}km</div></div><div style="text-align:right"><div class="ac-badge">${s.type}</div><div class="ac-km">${s.max_km}km</div></div></div>`).join('');
+  list.className='ac-list show';
+}
+
+function selectShoe(s){
+  selectedShoeData=s;
+  document.getElementById('m-name').value=s.brand+' '+s.model;
+  document.getElementById('ac-list').className='ac-list';
+  const h=document.getElementById('dur-hint');
+  h.innerHTML='<strong>'+s.brand+' '+s.model+'</strong><br>권장 내구도: <strong>'+s.max_km+'km</strong> ('+s.type+')';
+  h.className='dur-hint show';
+  const sel=document.getElementById('m-max');
+  sel.innerHTML='<option value="'+s.max_km+'">'+s.max_km+'km — '+s.type+' ★권장</option><option value="500">500km</option><option value="600">600km</option><option value="700">700km</option><option value="800">800km</option>';
+  sel.value=s.max_km;
+}
+document.addEventListener('click',e=>{if(!e.target.closest('.autocomplete-wrap'))document.getElementById('ac-list').className='ac-list';});
+
+// ── GPS ──
+function calcDist(a,b,c,d){
+  const R=6371,dL=(c-a)*Math.PI/180,dl=(d-b)*Math.PI/180;
+  const x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dl/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+function fmtTime(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function fmtPace(km,s){if(km<0.01)return'--';const p=s/km;return Math.floor(p/60)+"'"+String(Math.round(p%60)).padStart(2,'0')+'"';}
+
+function toggleRun(){isRunning?stopRun():startRun();}
+
+function startRun(){
+  if(!navigator.geolocation){alert('GPS를 지원하지 않는 기기예요.');return;}
+  if(!document.getElementById('run-shoe').value){alert('러닝화를 먼저 선택하세요.');return;}
+  isRunning=true;gpsPoints=[];totalDistKm=0;runStartTime=Date.now();finishedKm=0;
+  document.getElementById('run-start-btn').className='run-start-btn running';
+  document.getElementById('run-start-btn').textContent='러닝 종료';
+  document.getElementById('run-finish-card').className='run-finish-card';
+  document.getElementById('run-save-area').className='run-save-area';
+  document.getElementById('run-km-display').textContent='0.00';
+  document.getElementById('run-pts').textContent='0';
+  document.getElementById('gps-dot').className='gps-dot searching';
+  document.getElementById('gps-label').textContent='GPS 신호 찾는 중...';
+  runTimerInterval=setInterval(()=>{
+    const e=Math.floor((Date.now()-runStartTime)/1000);
+    document.getElementById('run-time').textContent=fmtTime(e);
+    document.getElementById('run-pace').textContent=fmtPace(totalDistKm,e);
+  },1000);
+  watchId=navigator.geolocation.watchPosition(pos=>{
+    const{latitude:lat,longitude:lon,accuracy:acc}=pos.coords;
+    document.getElementById('gps-dot').className='gps-dot active';
+    document.getElementById('gps-label').textContent='GPS 연결됨 (정확도 '+Math.round(acc)+'m)';
+    if(gpsPoints.length>0&&acc<30){
+      const prev=gpsPoints[gpsPoints.length-1];
+      const d=calcDist(prev.lat,prev.lon,lat,lon);
+      if(d>0.003&&d<0.3){totalDistKm+=d;document.getElementById('run-km-display').textContent=totalDistKm.toFixed(2);}
+    }
+    if(acc<50){gpsPoints.push({lat,lon});document.getElementById('run-pts').textContent=gpsPoints.length;}
+  },err=>{
+    document.getElementById('gps-dot').className='gps-dot';
+    document.getElementById('gps-label').textContent=err.code===1?'GPS 권한을 허용해주세요':'GPS 신호 없음';
+  },{enableHighAccuracy:true,maximumAge:2000,timeout:10000});
+}
+
+function stopRun(){
+  isRunning=false;
+  if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;}
+  clearInterval(runTimerInterval);
+  finishedKm=totalDistKm;
+  finishedDuration=Math.floor((Date.now()-runStartTime)/1000);
+  document.getElementById('run-start-btn').className='run-start-btn idle';
+  document.getElementById('run-start-btn').textContent='러닝 시작';
+  document.getElementById('gps-dot').className='gps-dot';
+  document.getElementById('gps-label').textContent='GPS 대기 중';
+  if(finishedKm<0.01){alert('거리가 너무 짧아요.');resetRun();return;}
+  document.getElementById('run-finish-card').className='run-finish-card show';
+  document.getElementById('run-finish-km').textContent=finishedKm.toFixed(2)+'KM';
+  document.getElementById('run-finish-meta').textContent='시간: '+fmtTime(finishedDuration)+' · 페이스: '+fmtPace(finishedKm,finishedDuration);
+  document.getElementById('run-save-area').className='run-save-area show';
+}
+
+function resetRun(){
+  document.getElementById('run-km-display').textContent='0.00';
+  document.getElementById('run-time').textContent='00:00';
+  document.getElementById('run-pace').textContent='--';
+  document.getElementById('run-pts').textContent='--';
+  totalDistKm=0;gpsPoints=[];finishedKm=0;
+}
+
+async function saveGpsRun(){
+  if(finishedKm<0.01){alert('저장할 기록이 없어요.');return;}
+  const shoeId=document.getElementById('run-shoe').value;
+  const km=Math.round(finishedKm*100)/100;
+  const run_date=new Date().toISOString().split('T')[0];
+  const memo=document.getElementById('run-memo').value.trim()||'GPS 러닝';
+  const payload={user_id:USER_ID,shoe_id:shoeId,km,run_date,memo,source:'gps'};
+  try{
+    if(USER_ID){const r=await fetch(API+'/api/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const nr=await r.json();runs.unshift({...nr,shoe_id:shoeId});}
+    else runs.unshift({id:Date.now().toString(),...payload});
+    localStorage.setItem('sl_runs_cache',JSON.stringify(runs));
+    setSyncDot('ok');renderShoes();
+    alert(km.toFixed(2)+'km 저장 완료! 러닝화 내구도가 업데이트됐어요.');
+    document.getElementById('run-finish-card').className='run-finish-card';
+    document.getElementById('run-save-area').className='run-save-area';
+    document.getElementById('run-memo').value='';
+    resetRun();finishedKm=0;
+  }catch(e){alert('저장 실패');}
+}
+
+// ── 렌더링 ──
+function getDur(s){const used=runs.filter(r=>r.shoe_id===s.id||r.shoeId===s.id).reduce((a,r)=>a+r.km,0)+(s.start_km||s.startKm||0);const left=Math.max(0,(s.max_km||s.maxKm)-used);return{used,left,pct:Math.max(0,Math.min(100,(left/(s.max_km||s.maxKm))*100))};}
+function badge(p){if(p>40)return['bg','양호'];if(p>15)return['bw','주의'];return['bd','교체 필요'];}
+function barCls(p){if(p>40)return'bar-g';if(p>15)return'bar-w';return'bar-d';}
+
+function renderShoes(){
+  const el=document.getElementById('shoe-list');
+  if(!shoes.length){el.innerHTML='<div class="empty"><span class="empty-icon">👟</span><div class="empty-t">등록된 러닝화가 없어요</div><div>+ 버튼으로 추가하세요</div></div>';return;}
+  el.innerHTML=shoes.map(s=>{const d=getDur(s);const p=Math.round(d.pct);const[bc,bt]=badge(p);
+    return`<div class="shoe-card"><div class="shoe-card-top"><div><div class="shoe-name">${s.name}</div><div class="shoe-sub">최대 ${s.max_km||s.maxKm}km · ${s.purchase_date||s.date||''}</div></div><div style="display:flex;gap:6px;align-items:center"><span class="badge ${bc}">${bt}</span><button class="del-btn" onclick="delShoe('${s.id}',event)">×</button></div></div><div class="bar-wrap"><div class="bar ${barCls(p)}" style="width:${p}%"></div></div><div class="shoe-stats"><div><div class="ss-l">사용됨</div><div class="ss-v">${Math.round(d.used)}km</div></div><div style="text-align:center"><div class="ss-l">잔존율</div><div class="ss-v">${p}%</div></div><div style="text-align:right"><div class="ss-l">남은 수명</div><div class="ss-v">${Math.round(d.left)}km</div></div></div></div>`;
+  }).join('');
+}
+
+function renderHist(){
+  const el=document.getElementById('run-history');
+  const list=[...runs].sort((a,b)=>new Date(b.run_date||b.date)-new Date(a.run_date||a.date)).slice(0,20);
+  if(!list.length){el.innerHTML='<div class="empty" style="padding:24px 0"><div style="color:var(--t1)">기록이 없어요</div></div>';return;}
+  el.innerHTML=list.map(r=>{const s=shoes.find(x=>x.id===(r.shoe_id||r.shoeId));const tag=r.source==='gps'?'<span class="gps-tag">GPS</span> ':'';
+    return`<div class="hi"><div><div class="hi-dist">${parseFloat(r.km).toFixed(1)}KM</div><div class="hi-meta">${tag}${r.run_date||r.date}${r.memo?' · '+r.memo:''}</div></div><div class="hi-shoe">${s?s.name:'삭제된 신발'}</div></div>`;
+  }).join('');
+}
+
+function renderStats(){
+  document.getElementById('st-km').textContent=Math.round(runs.reduce((a,r)=>a+r.km,0));
+  document.getElementById('st-runs').textContent=runs.length;
+  document.getElementById('st-shoes').textContent=shoes.length;
+  const el=document.getElementById('stats-detail');
+  if(!shoes.length){el.innerHTML='<div class="empty">신발을 먼저 등록하세요</div>';return;}
+  el.innerHTML=shoes.map(s=>{const d=getDur(s);const p=Math.round(d.pct);const[bc]=badge(p);
+    return`<div class="shoe-card"><div class="shoe-card-top"><div class="shoe-name">${s.name}</div><span class="badge ${bc}">${p}% 잔존</span></div><div class="bar-wrap"><div class="bar ${barCls(p)}" style="width:${p}%"></div></div><div class="shoe-stats"><div><div class="ss-l">사용</div><div class="ss-v">${Math.round(d.used)}km</div></div><div style="text-align:right"><div class="ss-l">남음</div><div class="ss-v">${Math.round(d.left)}km</div></div></div></div>`;
+  }).join('');
+}
+
+function refreshSelects(){
+  const opts=shoes.length?shoes.map(s=>`<option value="${s.id}">${s.name}</option>`).join(''):'<option value="">먼저 러닝화를 등록하세요</option>';
+  document.getElementById('run-shoe').innerHTML=opts;
+  document.getElementById('log-shoe').innerHTML=opts;
+}
+
+function today(){return new Date().toISOString().split('T')[0];}
+
+function showTab(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('p-'+name).classList.add('active');
+  btn.classList.add('active');
+  document.querySelector('.content').scrollTop=0;
+  if(name==='run')refreshSelects();
+  else if(name==='log'){refreshSelects();renderHist();}
+  else if(name==='stats')renderStats();
+  else renderShoes();
+}
+
+function openModal(){selectedShoeData=null;document.getElementById('modal-bg').className='modal-bg open';document.getElementById('m-date').value=today();document.getElementById('m-name').value='';document.getElementById('m-used').value='0';document.getElementById('dur-hint').className='dur-hint';document.getElementById('ac-list').className='ac-list';document.getElementById('m-max').innerHTML='<option value="500">500km — 소프트/쿠션형</option><option value="600" selected>600km — 일반형</option><option value="700">700km — 내구형</option><option value="800">800km — 고내구형</option>';}
+function closeModal(){document.getElementById('modal-bg').className='modal-bg';}
+document.getElementById('modal-bg').addEventListener('click',e=>{if(e.target.id==='modal-bg')closeModal();});
+
+async function saveShoe(){
+  const name=document.getElementById('m-name').value.trim();
+  if(!name){alert('모델명을 입력해주세요');return;}
+  const payload={user_id:USER_ID,name,brand:selectedShoeData?.brand||'',model:selectedShoeData?.model||'',max_km:parseInt(document.getElementById('m-max').value),start_km:parseFloat(document.getElementById('m-used').value)||0,purchase_date:document.getElementById('m-date').value};
+  try{
+    if(USER_ID){const r=await fetch(API+'/api/shoes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});shoes.unshift(await r.json());setSyncDot('ok');}
+    else shoes.unshift({id:Date.now().toString(),...payload});
+    localStorage.setItem('sl_shoes_cache',JSON.stringify(shoes));closeModal();renderShoes();
+  }catch(e){alert('저장 실패');}
+}
+
+async function delShoe(id,e){
+  e.stopPropagation();if(!confirm('이 러닝화를 삭제할까요?'))return;
+  try{
+    if(USER_ID)await fetch(API+'/api/shoes/'+id,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:USER_ID})});
+    shoes=shoes.filter(s=>s.id!==id);runs=runs.filter(r=>(r.shoe_id||r.shoeId)!==id);
+    localStorage.setItem('sl_shoes_cache',JSON.stringify(shoes));localStorage.setItem('sl_runs_cache',JSON.stringify(runs));
+    renderShoes();
+  }catch(e){alert('삭제 실패');}
+}
+
+async function addRun(){
+  const shoeId=document.getElementById('log-shoe').value;
+  const km=parseFloat(document.getElementById('log-km').value);
+  const run_date=document.getElementById('log-date').value;
+  if(!shoeId||!km||km<=0||!run_date){alert('모든 항목을 입력해주세요');return;}
+  const payload={user_id:USER_ID,shoe_id:shoeId,km,run_date,memo:document.getElementById('log-memo2').value.trim(),source:'manual'};
+  try{
+    if(USER_ID){const r=await fetch(API+'/api/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const nr=await r.json();runs.unshift({...nr,shoe_id:shoeId});setSyncDot('ok');}
+    else runs.unshift({id:Date.now().toString(),...payload});
+    localStorage.setItem('sl_runs_cache',JSON.stringify(runs));
+    document.getElementById('log-km').value='';document.getElementById('log-memo2').value='';
+    renderHist();renderShoes();
+  }catch(e){alert('저장 실패');}
+}
+
+document.getElementById('log-date').value=today();
+init();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
