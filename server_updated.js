@@ -352,7 +352,7 @@ app.get('/api/shoes/search', (req, res) => {
     const modelMatch = s.model.toLowerCase().includes(q);
     const kwMatch = s.keywords.some(k => k.includes(q) || q.includes(k.substring(0, Math.min(k.length, q.length))));
     return brandMatch || modelMatch || kwMatch;
-  }).slice(0, 8);
+  }).slice(0, 20);
   res.json(results);
 });
 
