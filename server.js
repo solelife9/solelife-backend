@@ -446,13 +446,20 @@ const SHOE_DB = [
 app.get('/api/shoes/search', (req, res) => {
   const q = (req.query.q || '').toLowerCase().trim();
   if (!q) return res.json([]);
-  const results = SHOE_DB.filter(s => {
-    const brandMatch = s.brand.toLowerCase().includes(q);
-    const modelMatch = s.model.toLowerCase().includes(q);
+  const scored = SHOE_DB.map(s => {
+    const brand = s.brand.toLowerCase();
+    const model = s.model.toLowerCase();
     const kwMatch = s.keywords.some(k => k.includes(q) || q.includes(k.substring(0, Math.min(k.length, q.length))));
-    return brandMatch || modelMatch || kwMatch;
-  }).slice(0, 50);
-  res.json(results);
+    if (!brand.includes(q) && !model.includes(q) && !kwMatch) return null;
+    let score = 0;
+    if (brand === q) score = 4;
+    else if (brand.startsWith(q)) score = 3;
+    else if (brand.includes(q)) score = 2;
+    else if (model.startsWith(q)) score = 1;
+    return { s, score };
+  }).filter(Boolean);
+  scored.sort((a, b) => b.score - a.score);
+  res.json(scored.slice(0, 50).map(x => x.s));
 });
 
 app.listen(PORT, () => {
