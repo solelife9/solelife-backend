@@ -139,6 +139,11 @@ app.post('/api/auth/naver', async (req, res) => {
   }
 });
 
+// 소셜 로그인 설정 점검(값 노출 없이 설정 여부만) — 배포/환경변수 진단용.
+app.get('/api/auth/health', (req, res) => {
+  res.json({ firebaseConfigured: !!process.env.FIREBASE_SERVICE_ACCOUNT, ts: Date.now() });
+});
+
 // ── 러닝화 목록 조회 ──
 app.get('/api/shoes', (req, res) => {
   const { user_id } = req.query;
