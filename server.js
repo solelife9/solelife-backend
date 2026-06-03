@@ -74,6 +74,71 @@ app.post('/api/auth', (req, res) => {
   res.json({ user_id: user.id });
 });
 
+// ── 소셜 로그인(카카오·네이버) → Firebase 커스텀 토큰 ──────────────────────────
+// 카카오/네이버는 Firebase 기본 제공 제공자가 아니므로, 앱이 네이티브 SDK로 받은
+// access token 을 여기서 검증하고 firebase-admin 으로 Firebase 커스텀 토큰을 발급한다.
+// 앱은 그 토큰으로 signInWithCustomToken 하여 Firestore 동기를 그대로 쓴다.
+// 환경변수 FIREBASE_SERVICE_ACCOUNT 에 Firebase 서비스계정 JSON(문자열 통째로)을 넣을 것.
+let _admin = null;
+function getAdmin() {
+  if (_admin) return _admin;
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT 환경변수가 없습니다.');
+  const admin = require('firebase-admin');
+  if (!admin.apps.length) {
+    admin.initializeApp({ credential: admin.credential.cert(JSON.parse(raw)) });
+  }
+  _admin = admin;
+  return admin;
+}
+function mintCustomToken(uid, claims) {
+  return getAdmin().auth().createCustomToken(uid, claims);
+}
+
+// 카카오: access token 으로 사용자 조회 → 커스텀 토큰 발급. uid 는 'kakao:<회원번호>'.
+app.post('/api/auth/kakao', async (req, res) => {
+  try {
+    const { accessToken } = req.body || {};
+    if (!accessToken) return res.status(400).json({ error: 'accessToken 필요' });
+    const r = await fetch('https://kapi.kakao.com/v2/user/me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!r.ok) return res.status(401).json({ error: '카카오 토큰 검증 실패' });
+    const me = await r.json();
+    if (!me || me.id == null) return res.status(401).json({ error: '카카오 사용자 정보 없음' });
+    const uid = `kakao:${me.id}`;
+    const email = (me.kakao_account && me.kakao_account.email) || null;
+    const name = (me.kakao_account && me.kakao_account.profile && me.kakao_account.profile.nickname) || null;
+    const firebaseToken = await mintCustomToken(uid, { provider: 'kakao', email, name });
+    res.json({ firebaseToken, uid, email, name });
+  } catch (e) {
+    res.status(500).json({ error: String((e && e.message) || e) });
+  }
+});
+
+// 네이버: access token 으로 사용자 조회 → 커스텀 토큰 발급. uid 는 'naver:<고유 id>'.
+app.post('/api/auth/naver', async (req, res) => {
+  try {
+    const { accessToken } = req.body || {};
+    if (!accessToken) return res.status(400).json({ error: 'accessToken 필요' });
+    const r = await fetch('https://openapi.naver.com/v1/nid/me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!r.ok) return res.status(401).json({ error: '네이버 토큰 검증 실패' });
+    const body = await r.json();
+    if (!body || body.resultcode !== '00' || !body.response || body.response.id == null) {
+      return res.status(401).json({ error: '네이버 사용자 정보 없음' });
+    }
+    const uid = `naver:${body.response.id}`;
+    const email = body.response.email || null;
+    const name = body.response.nickname || body.response.name || null;
+    const firebaseToken = await mintCustomToken(uid, { provider: 'naver', email, name });
+    res.json({ firebaseToken, uid, email, name });
+  } catch (e) {
+    res.status(500).json({ error: String((e && e.message) || e) });
+  }
+});
+
 // ── 러닝화 목록 조회 ──
 app.get('/api/shoes', (req, res) => {
   const { user_id } = req.query;
