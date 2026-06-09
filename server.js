@@ -47,6 +47,12 @@ db.exec(`
   );
 `);
 
+// 기존 DB에 없을 수 있는 컬럼을 안전하게 추가 (이미 있으면 무시)
+try { db.exec('ALTER TABLE shoes ADD COLUMN retired INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec('ALTER TABLE runs ADD COLUMN route TEXT DEFAULT ""'); } catch(e) {}
+try { db.exec('ALTER TABLE runs ADD COLUMN location TEXT DEFAULT ""'); } catch(e) {}
+try { db.exec('ALTER TABLE runs ADD COLUMN heart_rate INTEGER DEFAULT 0'); } catch(e) {}
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -146,57 +152,131 @@ app.get('/api/auth/health', (req, res) => {
 
 // ── 러닝화 목록 조회 ──
 app.get('/api/shoes', (req, res) => {
-  const { user_id } = req.query;
-  if (!user_id) return res.status(400).json({ error: 'user_id 필요' });
-  const shoes = db.prepare('SELECT * FROM shoes WHERE user_id = ? ORDER BY created_at DESC').all(user_id);
-  res.json(shoes);
+  try {
+    const { user_id } = req.query;
+    if (!user_id) return res.status(400).json({ error: 'user_id 필요' });
+    const shoes = db.prepare('SELECT * FROM shoes WHERE user_id = ? ORDER BY created_at DESC').all(user_id);
+    res.json(shoes);
+  } catch (e) {
+    console.error('GET /api/shoes error:', e);
+    res.status(500).json({ error: String((e && e.message) || e) });
+  }
 });
 
 // ── 러닝화 등록 ──
 app.post('/api/shoes', (req, res) => {
-  const { user_id, name, brand, model, max_km, start_km, purchase_date } = req.body;
-  if (!user_id || !name) return res.status(400).json({ error: '필수값 누락' });
-  const id = uuidv4();
-  db.prepare(
-    'INSERT INTO shoes (id, user_id, name, brand, model, max_km, start_km, purchase_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(id, user_id, name, brand || '', model || '', max_km || 600, start_km || 0, purchase_date || '');
-  res.json({ id, name, brand, model, max_km, start_km, purchase_date });
+  try {
+    const { user_id, name, brand, model, max_km, start_km, purchase_date } = req.body;
+    if (!user_id || !name) return res.status(400).json({ error: '필수값 누락' });
+    const id = uuidv4();
+    db.prepare(
+      'INSERT INTO shoes (id, user_id, name, brand, model, max_km, start_km, purchase_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(id, user_id, name, brand || '', model || '', max_km || 600, start_km || 0, purchase_date || '');
+    const shoe = db.prepare('SELECT * FROM shoes WHERE id = ?').get(id);
+    res.json(shoe || { id, name, brand, model, max_km, start_km, purchase_date });
+  } catch (e) {
+    console.error('POST /api/shoes error:', e);
+    res.status(500).json({ error: String((e && e.message) || e) });
+  }
 });
 
-// ── 러닝화 삭제 ──
+// ── 러닝화 수정 (이름·수명·보관 상태) ──
+app.patch('/api/shoes/:id', (req, res) => {
+  try {
+    const { user_id, name, max_km, retired } = req.body;
+    if (!user_id) return res.status(400).json({ error: 'user_id 필요' });
+    if (name !== undefined) {
+      db.prepare('UPDATE shoes SET name = ? WHERE id = ? AND user_id = ?').run(name, req.params.id, user_id);
+    }
+    if (max_km !== undefined) {
+      db.prepare('UPDATE shoes SET max_km = ? WHERE id = ? AND user_id = ?').run(max_km, req.params.id, user_id);
+    }
+    if (retired !== undefined) {
+      db.prepare('UPDATE shoes SET retired = ? WHERE id = ? AND user_id = ?').run(retired ? 1 : 0, req.params.id, user_id);
+    }
+    const shoe = db.prepare('SELECT * FROM shoes WHERE id = ? AND user_id = ?').get(req.params.id, user_id);
+    res.json(shoe || { ok: true });
+  } catch (e) {
+    console.error('PATCH /api/shoes error:', e);
+    res.status(500).json({ error: String((e && e.message) || e) });
+  }
+});
+
+// ── 러닝화 삭제 (런 기록은 보존 — 데이터 파괴 금지) ──
 app.delete('/api/shoes/:id', (req, res) => {
-  const { user_id } = req.body;
-  db.prepare('DELETE FROM runs WHERE shoe_id = ? AND user_id = ?').run(req.params.id, user_id);
-  db.prepare('DELETE FROM shoes WHERE id = ? AND user_id = ?').run(req.params.id, user_id);
-  res.json({ ok: true });
+  try {
+    const { user_id } = req.body;
+    db.prepare('DELETE FROM shoes WHERE id = ? AND user_id = ?').run(req.params.id, user_id);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('DELETE /api/shoes error:', e);
+    res.status(500).json({ error: String((e && e.message) || e) });
+  }
 });
 
 // ── 런 기록 목록 조회 ──
 app.get('/api/runs', (req, res) => {
-  const { user_id } = req.query;
-  if (!user_id) return res.status(400).json({ error: 'user_id 필요' });
-  const runs = db.prepare(
-    'SELECT * FROM runs WHERE user_id = ? ORDER BY run_date DESC, created_at DESC'
-  ).all(user_id);
-  res.json(runs);
+  try {
+    const { user_id } = req.query;
+    if (!user_id) return res.status(400).json({ error: 'user_id 필요' });
+    const runs = db.prepare(
+      'SELECT * FROM runs WHERE user_id = ? ORDER BY run_date DESC, created_at DESC'
+    ).all(user_id);
+    res.json(runs);
+  } catch (e) {
+    console.error('GET /api/runs error:', e);
+    res.status(500).json({ error: String((e && e.message) || e) });
+  }
 });
 
 // ── 런 기록 추가 ──
 app.post('/api/runs', (req, res) => {
-  const { user_id, shoe_id, km, run_date, memo, source, duration, cadence } = req.body;
-  if (!user_id || !shoe_id || !km || !run_date) return res.status(400).json({ error: '필수값 누락' });
-  const id = uuidv4();
-  db.prepare(
-    'INSERT INTO runs (id, user_id, shoe_id, km, run_date, memo, source, duration, cadence) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(id, user_id, shoe_id, km, run_date, memo || '', source || 'manual', duration || 0, cadence || 0);
-  res.json({ id, shoe_id, km, run_date, memo, source, duration: duration || 0, cadence: cadence || 0 });
+  try {
+    const { user_id, shoe_id, km, run_date, memo, source, duration, cadence, route, location, heart_rate } = req.body;
+    if (!user_id || !shoe_id || !km || !run_date) return res.status(400).json({ error: '필수값 누락' });
+    const id = uuidv4();
+    db.prepare(
+      'INSERT INTO runs (id, user_id, shoe_id, km, run_date, memo, source, duration, cadence, route, location, heart_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(id, user_id, shoe_id, km, run_date, memo || '', source || 'manual', duration || 0, cadence || 0, route || '', location || '', heart_rate || 0);
+    res.json({ id, shoe_id, km, run_date, memo, source, duration: duration || 0, cadence: cadence || 0, route: route || '', location: location || '', heart_rate: heart_rate || 0 });
+  } catch (e) {
+    console.error('POST /api/runs error:', e);
+    res.status(500).json({ error: String((e && e.message) || e) });
+  }
+});
+
+// ── 런 기록 수정 ──
+app.patch('/api/runs/:id', (req, res) => {
+  try {
+    const { user_id, shoe_id, km, run_date, duration } = req.body;
+    if (!user_id) return res.status(400).json({ error: 'user_id 필요' });
+    const fields = [];
+    const vals = [];
+    if (shoe_id !== undefined) { fields.push('shoe_id = ?'); vals.push(shoe_id); }
+    if (km !== undefined) { fields.push('km = ?'); vals.push(km); }
+    if (run_date !== undefined) { fields.push('run_date = ?'); vals.push(run_date); }
+    if (duration !== undefined) { fields.push('duration = ?'); vals.push(duration); }
+    if (fields.length > 0) {
+      db.prepare(`UPDATE runs SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`).run(...vals, req.params.id, user_id);
+    }
+    const run = db.prepare('SELECT * FROM runs WHERE id = ? AND user_id = ?').get(req.params.id, user_id);
+    res.json(run || { ok: true });
+  } catch (e) {
+    console.error('PATCH /api/runs error:', e);
+    res.status(500).json({ error: String((e && e.message) || e) });
+  }
 });
 
 // ── 런 기록 삭제 ──
 app.delete('/api/runs/:id', (req, res) => {
-  const { user_id } = req.body;
-  db.prepare('DELETE FROM runs WHERE id = ? AND user_id = ?').run(req.params.id, user_id);
-  res.json({ ok: true });
+  try {
+    const { user_id } = req.body;
+    db.prepare('DELETE FROM runs WHERE id = ? AND user_id = ?').run(req.params.id, user_id);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('DELETE /api/runs error:', e);
+    res.status(500).json({ error: String((e && e.message) || e) });
+  }
 });
 
 // ── 신발 DB 검색 (자동완성) ──
