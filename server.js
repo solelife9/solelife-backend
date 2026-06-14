@@ -1,60 +1,22 @@
 const express = require('express');
 const cors = require('cors');
-const Database = require('better-sqlite3');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// DB 초기화
-const db = new Database(path.join(__dirname, 'solelife.db'));
-
-// 테이블 생성
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    device_id TEXT UNIQUE NOT NULL,
-    created_at TEXT DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS shoes (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    brand TEXT,
-    model TEXT,
-    max_km INTEGER NOT NULL DEFAULT 600,
-    start_km REAL NOT NULL DEFAULT 0,
-    purchase_date TEXT,
-    created_at TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS runs (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    shoe_id TEXT NOT NULL,
-    km REAL NOT NULL,
-    run_date TEXT NOT NULL,
-    memo TEXT DEFAULT '',
-    source TEXT DEFAULT 'manual',
-    duration INTEGER DEFAULT 0,
-    cadence INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (shoe_id) REFERENCES shoes(id)
-  );
-`);
-
-// 기존 DB에 없을 수 있는 컬럼을 안전하게 추가 (이미 있으면 무시)
-try { db.exec('ALTER TABLE shoes ADD COLUMN retired INTEGER DEFAULT 0'); } catch(e) {}
-try { db.exec('ALTER TABLE runs ADD COLUMN route TEXT DEFAULT ""'); } catch(e) {}
-try { db.exec('ALTER TABLE runs ADD COLUMN location TEXT DEFAULT ""'); } catch(e) {}
-try { db.exec('ALTER TABLE runs ADD COLUMN heart_rate INTEGER DEFAULT 0'); } catch(e) {}
+// DB — 단일 연결과 전체 스키마는 models/db.js 가 소유한다(기존 users·shoes·runs
+// 테이블/데이터 보존 + v1 게이미피케이션 테이블 추가). 같은 연결을 v1 모듈과 공유.
+const db = require('./models/db');
 
 app.use(cors());
 app.use(express.json());
+
+// ── KEEGO Progression 백엔드 v1 (멀티유저 랭크/타이틀/업적/챌린지/리더보드) ──
+// 모듈식(routes/controllers/services/models/middleware). 기존 /api/auth·/api/shoes·
+// /api/runs 라우트는 그대로 두고, 새 기능은 /api/v1 아래로만 추가한다.
+app.use('/api/v1', require('./routes'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => {
@@ -611,6 +573,12 @@ app.get('/api/shoes/search', (req, res) => {
   scored.sort((a, b) => b.score - a.score);
   res.json(scored.slice(0, 50).map(x => x.s));
 });
+
+// ── API 404 + 중앙 에러 핸들러 ──
+// 404 는 /api 미매칭에만 적용(웹 정적 서빙/'/' 동작은 그대로). 에러 핸들러는 항상 마지막.
+const { notFound, errorHandler } = require('./middleware/errorHandler');
+app.use('/api', notFound);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`✅ SoleLife 서버 실행 중: http://localhost:${PORT}`);
