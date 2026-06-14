@@ -101,6 +101,14 @@ routes/index.js       /api/v1 라우터(전부 인증 필수, 리더보드 read-
 rotation .15 / injuryPrevention .10 / engagement .10) → 0..100 → 7티어. **거리 단독으로는 Silver
 하한(25점)을 넘지 못하도록** 설계되어, 신발관리·로테이션·일관성 등 多차원이 상위 티어를 만듭니다.
 
+### 업적·타이틀 카탈로그 (앱과 1:1)
+`services/achievementsService.js`(업적 52개)·`services/titlesService.js`(타이틀 38개)는 앱
+`lib/progression/achievements.ts`·`titles.ts` 를 **키·이름·tier·criterion 그대로 포팅**했습니다.
+서버가 검증된 컨텍스트로 unlocked 를 직접 판정합니다(클라 주장 불신). 데이터 한계상 서버에서
+판정 불가한 항목: 히든 `earlyBird`/`nightRunner`(run_date 에 시각 없음), 은퇴 등급
+`hallOfFame`(개인 PB 하이라이트 필요). 챌린지는 앱에서 동적·개인화(고정 키 없음)라 서버는
+월간 집계 기반 대표 챌린지를 둡니다.
+
 ### 환경변수
 - `FIREBASE_SERVICE_ACCOUNT` — Firebase 서비스계정 JSON(문자열 통째). ID 토큰 검증/커스텀
   토큰 발급에 필요. 미설정 시 v1 보호 라우트는 503 으로 응답합니다. (배포 환경에서 설정)

@@ -10,8 +10,10 @@
 // retirementCount=0, retirementGrades=[].
 // ============================================================================
 const db = require('../models/db');
+const { gradeFor } = require('./gradeService');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const SPEEDSTER_MIN_KM = 5; // bestPace5kSec: 5km 이상 단일 런만.
 
 /** uid 로 연결된 로컬 user.id 목록(없으면 빈 배열 → 빈 컨텍스트). */
 function localUserIds(uid) {
@@ -101,6 +103,7 @@ function buildContext(uid, now = Date.now()) {
   let cumulativeKm = 0;
   let totalDurationS = 0;
   let longestRunKm = 0;
+  let bestPace5kSec = null; // 5km 이상 단일 런 최고(최소) 평균 페이스(sec/km).
   const perShoe = {};
   const runDates = [];
   const usedShoeIds = new Set();
@@ -110,21 +113,33 @@ function buildContext(uid, now = Date.now()) {
       km: num(s.start_km),
       maxKm: num(s.max_km),
       retired: !!s.retired,
+      runs: 0,
+      firstWorn: null, // 'YYYY-MM-DD' — 이 신발의 가장 이른 런 날짜.
     };
   }
 
   for (const r of runs) {
     const km = num(r.km);
+    const durS = num(r.duration);
     cumulativeKm += km;
-    totalDurationS += num(r.duration);
+    totalDurationS += durS;
     if (km > longestRunKm) longestRunKm = km;
+    // bestPace5kSec: 5km 이상 단일 런의 평균 페이스 최소값.
+    if (km >= SPEEDSTER_MIN_KM && durS > 0) {
+      const pace = durS / km;
+      if (bestPace5kSec === null || pace < bestPace5kSec) bestPace5kSec = pace;
+    }
     runDates.push(r.run_date);
     if (r.shoe_id) {
       usedShoeIds.add(r.shoe_id);
       if (!perShoe[r.shoe_id]) {
-        perShoe[r.shoe_id] = { km: 0, maxKm: 0, retired: false };
+        perShoe[r.shoe_id] = { km: 0, maxKm: 0, retired: false, runs: 0, firstWorn: null };
       }
-      perShoe[r.shoe_id].km += km;
+      const ps = perShoe[r.shoe_id];
+      ps.km += km;
+      ps.runs += 1;
+      const d = (r.run_date || '').slice(0, 10);
+      if (d && (!ps.firstWorn || d < ps.firstWorn)) ps.firstWorn = d;
     }
   }
 
@@ -133,7 +148,17 @@ function buildContext(uid, now = Date.now()) {
   const weeklyActiveRatio = computeWeeklyActiveRatio(runDates, now);
   const avgPaceSec =
     cumulativeKm > 0 && totalDurationS > 0 ? totalDurationS / cumulativeKm : null;
-  const retiredShoeCount = shoes.filter(s => !!s.retired).length;
+  const retiredShoes = shoes.filter(s => !!s.retired);
+  const retiredShoeCount = retiredShoes.length;
+  // 은퇴 등급(best-effort): 영속 은퇴 레코드가 없으므로 retired 플래그 + 현재 마모비율로
+  // 등급을 추정한다. hallOfFame(PB 필요)은 산정 불가. retirementCount 도 플래그 수로 근사.
+  const retirementGrades = retiredShoes
+    .map(s => {
+      // perShoe[s.id].km 는 start_km + 런 누적 = 은퇴 시점 총 주행거리.
+      const totalKm = perShoe[s.id] ? perShoe[s.id].km : num(s.start_km);
+      return num(s.max_km) > 0 ? gradeFor(totalKm, num(s.max_km)) : null;
+    })
+    .filter(Boolean);
 
   return {
     now,
@@ -142,18 +167,18 @@ function buildContext(uid, now = Date.now()) {
     totalDurationS,
     longestRunKm,
     bestPaceSec: null,
-    bestPace5kSec: null,
+    bestPace5kSec,
     avgPaceSec,
     currentStreak,
     longestStreak,
     weeklyActiveRatio,
-    earlyRunCount: 0, // run_date 에 시각 없음 → 산정 불가.
-    nightRunCount: 0,
+    earlyRunCount: 0, // run_date 에 시각 없음 → 산정 불가(early_bird 히든 미언락).
+    nightRunCount: 0, // 동상(night_runner 히든 미언락).
     longestGapDays,
     registeredShoeCount: shoes.length,
     retiredShoeCount,
-    retirementCount: 0, // 은퇴 영속 레코드 미보유.
-    retirementGrades: [],
+    retirementCount: retiredShoeCount, // best-effort: 영속 레코드 부재 → retired 플래그 수로 근사.
+    retirementGrades,
     perShoe,
     earnedTitleKeys: [],
     earnedTitleCount: 0,
